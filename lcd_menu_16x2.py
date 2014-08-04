@@ -23,12 +23,16 @@ menu_data = ['File',
 class Menu:
     def __init__(self, data = []):
         self.data = data
-        self.selection = [-1, 0]
+        self.selection = [0, -1]
         self.show_selection()
 
     # to show a list as a string, with the selection first
     def list_to_string(self, l, sel):
-        s = ""
+        if sel == -1:
+            s = ""
+            sel = 0
+        else:
+            s = "=> "
         for index in range(sel, len(l)):
             s = s + l[index] + ' '
         for index in range(0, sel - 1):
@@ -36,33 +40,23 @@ class Menu:
         return s
 
     def get_selection(self):
-        if self.selection[0] == -1:             # at top level
-            print "Getting selection at top level"
-            s = self.data[self.selection[1] * 2]
-        else:
-            print "getting selection at submenu [", self.selection[0], "][", self.selection[1], "]"
-            s = self.data[self.selection[0] + 1][self.selection[1]]
+        print "getting selection at submenu [", self.selection[0], "][", self.selection[1], "]"
+        s = self.data[self.selection[0] * 2 + 1][self.selection[1]]
         return s
 
     def top_level_string(self):
-        s = ""
+        s = "=>"
         tl_menus = len(self.data)
-        for c in range(self.selection[1] * 2, tl_menus, 2):
+        for c in range(self.selection[0] * 2, tl_menus, 2):
             s = s + " " + self.data[c]
-        for c in range(0, self.selection[1] * 2, 2):
+        for c in range(0, self.selection[0] * 2, 2):
             s = s + " " + self.data[c]
         return s
 
     def show_selection(self):
         lcd.clear()
-        print "selection[0] = ", self.selection[0]
-        if self.selection[0] == -1:
-            lcd.message("=> " + self.data[self.selection[1] * 2] + "\n" + self.top_level_string())
-        elif isinstance(self.data[self.selection[0] * 2], str):
-            if isinstance(self.data[self.selection[0] * 2 + 1], list):
-                lcd.message(self.data[self.selection[0] * 2] + ' => ' + self.data[self.selection[0] * 2 + 1][self.selection[1]] + "\n" + self.list_to_string(self.data[self.selection[0] * 2 + 1], self.selection[1]))
-            else:
-                lcd.message(self.data[self.selection[0]] )
+        print "selection = [", self.selection[0], "][", self.selection[1], "]"
+        lcd.message(self.top_level_string() + "\n" + self.list_to_string(self.data[self.selection[0] * 2 + 1], self.selection[1]))
 
     def process_button(self):
         retval = True
@@ -72,34 +66,48 @@ class Menu:
             exit()
         elif lcd.is_pressed(LCD.UP):
             print "Up button pressed"
-            if self.selection[0] != -1:
-                self.selection[0] -= 1
-                self.selection[1] = 0
+            if self.selection[1] != -1:
+                self.selection[1] -= 1
+
         elif lcd.is_pressed(LCD.DOWN):
             print "Down button pressed"
-            if self.selection[0] == -1:
-                self.selection[0] = self.selection[1]
+            if self.selection[1] == -1:
+                # we are moving down from the top menu
                 self.selection[1] = 0
+
         elif lcd.is_pressed(LCD.LEFT):
             print "Left button pressed"
-            if self.selection[1] > 0:
-                self.selection[1] -= 1
-            else:
-                if self.selection[0] == -1:
-                    s = len(self.data) / 2
+            if self.selection[1] == -1:
+                # we are in the top menu
+                if self.selection[0] > 0:
+                    self.selection[0] -= 1
                 else:
-                    s = len(self.data[self.selection[0] + 1])
-                self.selection[1] = s - 1
+                    self.selection[0] = len(self.data) / 2 - 1
+            else:
+                # we are in the submenu
+                if self.selection[1] > 0:
+                    self.selection -= 1
+                else:
+                    s = len(self.data[self.selection[0] * 2 + 1])
+                    self.selection[1] = s - 1
+
         elif lcd.is_pressed(LCD.RIGHT):
             print "Right button pressed"
-            if self.selection[0] == -1:
+            if self.selection[1] == -1:
+                # at top level menu
                 s = len(self.data) / 2
+                if self.selection[0] + 1 < s:
+                    self.selection[0] += 1
+                else:
+                    self.selection[0] = 0
             else:
-                s = len(self.data[self.selection[0] + 1])
-            if (self.selection[1] + 1) < s:
-                self.selection[1] += 1
-            else:
-                self.selection[1] = 0
+                # at submenu level
+                s = len(self.data[self.selection[0] * 2 + 1])
+                if (self.selection[1] + 1) < s:
+                    self.selection[1] += 1
+                else:
+                    self.selection[1] = 0
+
         else:
             retval = False
         return retval
