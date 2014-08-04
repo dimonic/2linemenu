@@ -86,7 +86,7 @@ class Menu:
             else:
                 # we are in the submenu
                 if self.selection[1] > 0:
-                    self.selection -= 1
+                    self.selection[1] -= 1
                 else:
                     s = len(self.data[self.selection[0] * 2 + 1])
                     self.selection[1] = s - 1
@@ -119,4 +119,4 @@ while True:
     # loop through each button to see if it was pressed
     if m.process_button() == True:
         m.show_selection()
-        time.sleep(1)
+        time.sleep(.1)
